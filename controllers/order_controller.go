@@ -6,6 +6,7 @@ import (
 
 	"order-management/models"
 	"order-management/services"
+	"order-management/queue"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +19,9 @@ type OrderController struct {
 func NewOrderController(orderService *services.OrderService) *OrderController {
 	return &OrderController{OrderService: orderService}
 }
+
+// Queue instance (initialized in main.go)
+var OrderQueue *queue.OrderQueue
 
 // CreateOrder handles order creation requests
 func (c *OrderController) CreateOrder(ctx *gin.Context) {
@@ -34,6 +38,9 @@ func (c *OrderController) CreateOrder(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
 		return
 	}
+
+	// Add order to queue for processing
+	OrderQueue.AddOrder(order.OrderID)
 
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Order created successfully", "order": order})
 }
@@ -80,7 +87,7 @@ func (c *OrderController) UpdateOrderStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Order status updated successfully"})
 }
 
-
+// GetAllOrders fetches all orders
 func (c *OrderController) GetAllOrders(ctx *gin.Context) {
 	orders, err := c.OrderService.GetAllOrders()
 	if err != nil {
@@ -88,4 +95,14 @@ func (c *OrderController) GetAllOrders(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, orders)
+}
+
+// GetOrderStatusCount fetches the count of orders for each status
+func (c *OrderController) GetOrderStatusCount(ctx *gin.Context) {
+	statusCounts, err := c.OrderService.GetOrderStatusCount()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch order status counts"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status_counts": statusCounts})
 }

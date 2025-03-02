@@ -2,27 +2,43 @@ package queue
 
 import (
 	"fmt"
-	"log"
-	"time"
+	"order-management/services"
+	"sync"
 )
 
-// OrderQueue holds pending orders
-var OrderQueue = make(chan int64, 100)
+// OrderQueue represents an in-memory queue
+type OrderQueue struct {
+	orders    chan int64
+	service   *services.OrderService
+	waitGroup sync.WaitGroup
+}
 
-// ProcessOrders listens for new orders and processes them
-func ProcessOrders(updateOrderStatus func(orderID int64, status string) error) {
-	for orderID := range OrderQueue {
-		fmt.Printf("Processing order: %d\n", orderID)
+// NewOrderQueue initializes a new queue for processing orders
+func NewOrderQueue(service *services.OrderService) *OrderQueue {
+	queue := &OrderQueue{
+		orders:  make(chan int64, 100), // Buffer size of 100
+		service: service,
+	}
+	go queue.processOrders()
+	return queue
+}
 
-		// Simulate order processing time
-		time.Sleep(2 * time.Second)
+// AddOrder adds an order ID to the queue
+func (q *OrderQueue) AddOrder(orderID int64) {
+	q.orders <- orderID
+}
 
-		// Update order status to "Completed"
-		err := updateOrderStatus(orderID, "Completed")
-		if err != nil {
-			log.Printf("Failed to update order %d: %v\n", orderID, err)
-		} else {
-			fmt.Printf("Order %d processed successfully.\n", orderID)
-		}
+// processOrders continuously processes orders from the queue
+func (q *OrderQueue) processOrders() {
+	for orderID := range q.orders {
+		fmt.Println("Processing order:", orderID)
+
+		// Example: Update status to "Processing"
+		q.service.UpdateOrderStatus(orderID, "Processing")
+
+		// Simulate completion (in a real scenario, add business logic)
+		q.service.UpdateOrderStatus(orderID, "Completed")
+
+		fmt.Println("Order", orderID, "completed")
 	}
 }
