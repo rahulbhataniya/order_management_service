@@ -3,6 +3,7 @@ package repository
 import (
 	"order-management/models"
 	"gorm.io/gorm"
+	"database/sql"
 )
 
 type OrderRepository struct {
@@ -59,11 +60,49 @@ func (r *OrderRepository) UpdateOrderStatus(orderID int64, status string) error 
 		Error
 }
 
-// GetOrderStatusCount fetches the count of orders with a specific status
-func (r *OrderRepository) GetOrderStatusCount(status string) (int64, error) {
+// GetTotalOrders retrieves the total number of orders
+func (r *OrderRepository) GetTotalOrders() (int64, error) {
 	var count int64
-	err := r.DB.Model(&models.Order{}).
-		Where("status = ?", status).
-		Count(&count).Error
+	err := r.DB.Model(&models.Order{}).Count(&count).Error
 	return count, err
+}
+
+// GetOrderStatusCount fetches count of orders by status
+func (r *OrderRepository) GetOrderStatusCount() (map[string]int64, error) {
+	var result []struct {
+		Status string
+		Count  int64
+	}
+	statusCounts := make(map[string]int64)
+
+	err := r.DB.Model(&models.Order{}).
+		Select("status, COUNT(*) as count").
+		Group("status").
+		Scan(&result).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, row := range result {
+		statusCounts[row.Status] = row.Count
+	}
+	return statusCounts, nil
+}
+
+// GetAvgProcessingTime calculates the average processing time for completed orders
+func (r *OrderRepository) GetAvgProcessingTime() (float64, error) {
+	var avgTime sql.NullFloat64
+
+	err := r.DB.Raw("SELECT AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) FROM orders WHERE status = 'completed'").Scan(&avgTime).Error
+	if err != nil {
+		return 0.0, err
+	}
+
+	// If avgTime is NULL, return 0.0
+	if !avgTime.Valid {
+		return 0.0, nil
+	}
+
+	return avgTime.Float64, nil
 }

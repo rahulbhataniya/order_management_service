@@ -6,15 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRoutes initializes routes
 func SetupRoutes(router *gin.Engine, orderController *controllers.OrderController) {
-	// Define routes
-	orderRoutes := router.Group("/orders")
+	api := router.Group("/api")
 	{
-		orderRoutes.POST("/", orderController.CreateOrder)                     // Create order
-		orderRoutes.GET("/:id", orderController.GetOrderStatus)                // Get order by ID
-		orderRoutes.PUT("/:id/status", orderController.UpdateOrderStatus)      // Update order status
-		orderRoutes.GET("/", orderController.GetAllOrders)                     // Get all orders
-		orderRoutes.GET("/status/count", orderController.GetOrderStatusCount)  // Get order status counts
+		api.GET("/orders", orderController.GetAllOrders)
+		api.GET("/orders/:id", orderController.GetOrderStatus)
+		api.POST("/orders", orderController.CreateOrder)
+		api.PUT("/orders/:id/status", orderController.UpdateOrderStatus)
+
+		// New route for order metrics
+		api.GET("/orders/metrics", orderController.GetOrderMetricsHandler)
 	}
 }
+

@@ -10,3 +10,13 @@ type Order struct {
 	CreatedAt   int64   `gorm:"autoCreateTime"` // Auto timestamp
 	UpdatedAt   int64   `gorm:"autoUpdateTime"` // Auto timestamp
 }
+
+
+type OrderMetrics struct {
+	TotalOrders         int64   `json:"total_orders"`
+	AvgProcessingTime   float64 `json:"avg_processing_time"` // in seconds
+	PendingOrders       int64   `json:"pending_orders"`
+	ProcessingOrders    int64   `json:"processing_orders"`
+	CompletedOrders     int64   `json:"completed_orders"`
+}
+

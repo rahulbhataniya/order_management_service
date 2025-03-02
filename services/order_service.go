@@ -39,8 +39,32 @@ func (s *OrderService) UpdateOrderStatus(orderID int64, status string) error {
 	return s.OrderRepo.UpdateOrderStatus(orderID, status)
 }
 
-// GetOrderStatusCount returns the count of orders with a specific status
-func (s *OrderService) GetOrderStatusCount(status string) (int64, error) {
-	return s.OrderRepo.GetOrderStatusCount(status)
+
+// GetOrderMetrics aggregates metrics for reporting
+func (s *OrderService) GetOrderMetrics() (*models.OrderMetrics, error) {
+	totalOrders, err := s.OrderRepo.GetTotalOrders()
+	if err != nil {
+		return nil, err
+	}
+
+	statusCounts, err := s.OrderRepo.GetOrderStatusCount()
+	if err != nil {
+		return nil, err
+	}
+
+	avgProcessingTime, err := s.OrderRepo.GetAvgProcessingTime()
+	if err != nil {
+		return nil, err
+	}
+
+	metrics := &models.OrderMetrics{
+		TotalOrders:       totalOrders,
+		AvgProcessingTime: avgProcessingTime,
+		PendingOrders:     statusCounts["pending"],
+		ProcessingOrders:  statusCounts["processing"],
+		CompletedOrders:   statusCounts["completed"],
+	}
+	return metrics, nil
 }
+
 

@@ -20,10 +20,9 @@ func main() {
 	orderService := services.NewOrderService(orderRepo)
 	orderController := controllers.NewOrderController(orderService)
 
-	// Initialize queue
+	// Initialize in-memory queue for async processing
 	controllers.OrderQueue = queue.NewOrderQueue(orderService)
 
-	// Setup routes
 	router := gin.Default()
 	routes.SetupRoutes(router, orderController)
 

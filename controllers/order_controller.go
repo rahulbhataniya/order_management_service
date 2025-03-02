@@ -109,15 +109,13 @@ func (c *OrderController) UpdateOrderStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Order status updated successfully"})
 }
 
-// GetOrderStatusCount retrieves the count of orders with a specific status
-func (c *OrderController) GetOrderStatusCount(ctx *gin.Context) {
-	status := ctx.Param("status")
 
-	count, err := c.OrderService.GetOrderStatusCount(status)
+// GetOrderMetricsHandler returns order processing metrics
+func (c *OrderController) GetOrderMetricsHandler(ctx *gin.Context) {
+	metrics, err := c.OrderService.GetOrderMetrics()
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch order count"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch metrics"})
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{"status": status, "count": count})
+	ctx.JSON(http.StatusOK, metrics)
 }
