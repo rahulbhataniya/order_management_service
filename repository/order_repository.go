@@ -20,13 +20,6 @@ func (r *OrderRepository) CreateOrder(order *models.Order) error {
 	return r.DB.Create(order).Error
 }
 
-// GetOrderByID fetches an order by ID
-func (r *OrderRepository) GetOrderByID(orderID int64) (*models.Order, error) {
-	var order models.Order
-	err := r.DB.Where("order_id = ?", orderID).First(&order).Error
-	return &order, err
-}
-
 // GetAllOrders retrieves all orders
 func (r *OrderRepository) GetAllOrders() ([]models.Order, error) {
 	var orders []models.Order
@@ -105,4 +98,11 @@ func (r *OrderRepository) GetAvgProcessingTime() (float64, error) {
 	}
 
 	return avgTime.Float64, nil
+}
+
+// GetOrderByID returns full order details
+func (r *OrderRepository) GetOrderByID(orderID int64) (*models.Order, error) {
+	var order models.Order
+	err := r.DB.First(&order, orderID).Error
+	return &order, err
 }

@@ -10,7 +10,8 @@ func SetupRoutes(router *gin.Engine, orderController *controllers.OrderControlle
 	api := router.Group("/api")
 	{
 		api.GET("/orders", orderController.GetAllOrders)
-		api.GET("/orders/:id", orderController.GetOrderStatus)
+		api.GET("/orders/:id", orderController.GetOrderDetails)   // Get full order details
+		api.GET("/orders/:id/status", orderController.GetOrderStatus) // Get only order status
 		api.POST("/orders", orderController.CreateOrder)
 		api.PUT("/orders/:id/status", orderController.UpdateOrderStatus)
 

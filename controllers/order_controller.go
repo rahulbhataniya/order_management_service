@@ -119,3 +119,22 @@ func (c *OrderController) GetOrderMetricsHandler(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, metrics)
 }
+
+
+// GetOrderDetails - Returns full order details
+func (c *OrderController) GetOrderDetails(ctx *gin.Context) {
+	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	order, err := c.OrderService.GetOrderDetails(orderID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, order)
+}
+

@@ -68,3 +68,9 @@ func (s *OrderService) GetOrderMetrics() (*models.OrderMetrics, error) {
 }
 
 
+// GetOrderDetails returns full order details
+func (s *OrderService) GetOrderDetails(orderID int64) (*models.Order, error) {
+	return s.OrderRepo.GetOrderByID(orderID)
+}
+
+
