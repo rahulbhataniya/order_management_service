@@ -6,6 +6,7 @@ import (
 	"order-management/repository"
 	"order-management/services"
 	"order-management/queue"
+	"order-management/routes"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,22 +20,13 @@ func main() {
 	orderService := services.NewOrderService(orderRepo)
 	orderController := controllers.NewOrderController(orderService)
 
-	// ✅ Initialize the queue correctly
+	// Initialize queue
 	controllers.OrderQueue = queue.NewOrderQueue(orderService)
 
-	// Set up Gin router
-	r := gin.Default()
-
-	// Define routes
-	orderRoutes := r.Group("/orders")
-	{
-		orderRoutes.POST("/", orderController.CreateOrder)                     // Create order
-		orderRoutes.GET("/:id", orderController.GetOrderStatus)                // Get order by ID
-		orderRoutes.PUT("/:id/status", orderController.UpdateOrderStatus)      // Update order status
-		orderRoutes.GET("/", orderController.GetAllOrders)                     // Get all orders
-		orderRoutes.GET("/status/count", orderController.GetOrderStatusCount)  // Get order status counts
-	}
+	// Setup routes
+	router := gin.Default()
+	routes.SetupRoutes(router, orderController)
 
 	// Start server
-	r.Run(":8080")
+	router.Run(":8080")
 }

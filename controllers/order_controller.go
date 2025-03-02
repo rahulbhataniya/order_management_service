@@ -15,37 +15,59 @@ type OrderController struct {
 	OrderService *services.OrderService
 }
 
-// NewOrderController initializes the controller
+// NewOrderController initializes controller
 func NewOrderController(orderService *services.OrderService) *OrderController {
 	return &OrderController{OrderService: orderService}
 }
 
-// Queue instance (initialized in main.go)
+// Queue instance
 var OrderQueue *queue.OrderQueue
 
-// CreateOrder handles order creation requests
+// CreateOrderHandler handles order creation
 func (c *OrderController) CreateOrder(ctx *gin.Context) {
 	var order models.Order
-
-	// Bind JSON request body to order model
 	if err := ctx.ShouldBindJSON(&order); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Save order using service
 	if err := c.OrderService.CreateOrder(&order); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create order"})
 		return
 	}
 
-	// Add order to queue for processing
-	OrderQueue.AddOrder(order.OrderID)
-
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Order created successfully", "order": order})
+	OrderQueue.AddOrder(order.OrderID) // Add order to queue
+	ctx.JSON(http.StatusCreated, gin.H{"message": "Order created", "order": order})
 }
 
-// GetOrderStatus fetches order details
+// GetOrder retrieves order by ID
+func (c *OrderController) GetOrder(ctx *gin.Context) {
+	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid order ID"})
+		return
+	}
+
+	order, err := c.OrderService.GetOrderByID(orderID)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, order)
+}
+
+// GetAllOrders fetches all orders
+func (c *OrderController) GetAllOrders(ctx *gin.Context) {
+	orders, err := c.OrderService.GetAllOrders()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch orders"})
+		return
+	}
+	ctx.JSON(http.StatusOK, orders)
+}
+
+// GetOrderStatus fetches the status of a specific order
 func (c *OrderController) GetOrderStatus(ctx *gin.Context) {
 	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -53,16 +75,16 @@ func (c *OrderController) GetOrderStatus(ctx *gin.Context) {
 		return
 	}
 
-	order, err := c.OrderService.GetOrderStatus(orderID)
+	order, err := c.OrderService.GetOrderByID(orderID)
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Order not found"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"order": order})
+	ctx.JSON(http.StatusOK, gin.H{"order_id": order.OrderID, "status": order.Status})
 }
 
-// UpdateOrderStatus updates the status of an order
+// UpdateOrderStatus updates the status of a specific order
 func (c *OrderController) UpdateOrderStatus(ctx *gin.Context) {
 	orderID, err := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -71,7 +93,7 @@ func (c *OrderController) UpdateOrderStatus(ctx *gin.Context) {
 	}
 
 	var updateData struct {
-		Status string `json:"status"`
+		Status string `json:"status" binding:"required"`
 	}
 
 	if err := ctx.ShouldBindJSON(&updateData); err != nil {
@@ -87,22 +109,15 @@ func (c *OrderController) UpdateOrderStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "Order status updated successfully"})
 }
 
-// GetAllOrders fetches all orders
-func (c *OrderController) GetAllOrders(ctx *gin.Context) {
-	orders, err := c.OrderService.GetAllOrders()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch orders"})
-		return
-	}
-	ctx.JSON(http.StatusOK, orders)
-}
-
-// GetOrderStatusCount fetches the count of orders for each status
+// GetOrderStatusCount retrieves the count of orders with a specific status
 func (c *OrderController) GetOrderStatusCount(ctx *gin.Context) {
-	statusCounts, err := c.OrderService.GetOrderStatusCount()
+	status := ctx.Param("status")
+
+	count, err := c.OrderService.GetOrderStatusCount(status)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch order status counts"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch order count"})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status_counts": statusCounts})
+
+	ctx.JSON(http.StatusOK, gin.H{"status": status, "count": count})
 }

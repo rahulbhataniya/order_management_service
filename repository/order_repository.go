@@ -9,55 +9,61 @@ type OrderRepository struct {
 	DB *gorm.DB
 }
 
-// NewOrderRepository creates a new repository instance
+// NewOrderRepository initializes repository
 func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{DB: db}
+}
+
+// CreateOrder inserts an order
+func (r *OrderRepository) CreateOrder(order *models.Order) error {
+	return r.DB.Create(order).Error
 }
 
 // GetOrderByID fetches an order by ID
 func (r *OrderRepository) GetOrderByID(orderID int64) (*models.Order, error) {
 	var order models.Order
-	err := r.DB.First(&order, orderID).Error
+	err := r.DB.Where("order_id = ?", orderID).First(&order).Error
 	return &order, err
+}
+
+// GetAllOrders retrieves all orders
+func (r *OrderRepository) GetAllOrders() ([]models.Order, error) {
+	var orders []models.Order
+	result := r.DB.Find(&orders)
+	return orders, result.Error
+}
+
+// UpdateMultipleOrdersStatus updates multiple orders in one DB transaction
+func (r *OrderRepository) UpdateMultipleOrdersStatus(orderIDs []int64, status string) error {
+	return r.DB.Model(&models.Order{}).
+		Where("order_id IN ?", orderIDs).
+		Update("status", status).
+		Error
+}
+
+// GetOrderStatus fetches only the status of an order by ID
+func (r *OrderRepository) GetOrderStatus(orderID int64) (string, error) {
+	var status string
+	err := r.DB.Model(&models.Order{}).
+		Select("status").
+		Where("order_id = ?", orderID).
+		Scan(&status).Error
+	return status, err
 }
 
 // UpdateOrderStatus updates the status of an order
 func (r *OrderRepository) UpdateOrderStatus(orderID int64, status string) error {
-	return r.DB.Model(&models.Order{}).Where("order_id = ?", orderID).Update("status", status).Error
+	return r.DB.Model(&models.Order{}).
+		Where("order_id = ?", orderID).
+		Update("status", status).
+		Error
 }
 
-
-// GetAllOrders fetches all orders from the database
-func (r *OrderRepository) GetAllOrders() ([]models.Order, error) {
-	var orders []models.Order
-	result := r.DB.Find(&orders) // GORM fetches all records
-	return orders, result.Error
-}
-
-// CreateOrder saves an order to the database with default status
-func (r *OrderRepository) CreateOrder(order *models.Order) error {
-	// Ensure the order status is set to "Pending"
-	if order.Status == "" {
-		order.Status = "Pending"
-	}
-	return r.DB.Create(order).Error
-}
-
-// GetOrderStatusCount returns the count of orders grouped by status
-func (r *OrderRepository) GetOrderStatusCount() (map[string]int64, error) {
-	var result []struct {
-		Status string
-		Count  int64
-	}
-	statusCounts := make(map[string]int64)
-
-	err := r.DB.Table("orders").Select("status, COUNT(*) as count").Group("status").Scan(&result).Error
-	if err != nil {
-		return nil, err
-	}
-
-	for _, row := range result {
-		statusCounts[row.Status] = row.Count
-	}
-	return statusCounts, nil
+// GetOrderStatusCount fetches the count of orders with a specific status
+func (r *OrderRepository) GetOrderStatusCount(status string) (int64, error) {
+	var count int64
+	err := r.DB.Model(&models.Order{}).
+		Where("status = ?", status).
+		Count(&count).Error
+	return count, err
 }

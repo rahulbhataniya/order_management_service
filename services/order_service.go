@@ -9,24 +9,19 @@ type OrderService struct {
 	OrderRepo *repository.OrderRepository
 }
 
-// NewOrderService creates a new service instance
-func NewOrderService(repo *repository.OrderRepository) *OrderService {
-	return &OrderService{OrderRepo: repo}
+// NewOrderService initializes service
+func NewOrderService(orderRepo *repository.OrderRepository) *OrderService {
+	return &OrderService{OrderRepo: orderRepo}
 }
 
-// CreateOrder creates an order
+// CreateOrder adds an order
 func (s *OrderService) CreateOrder(order *models.Order) error {
 	return s.OrderRepo.CreateOrder(order)
 }
 
-// GetOrderStatus retrieves order by ID
-func (s *OrderService) GetOrderStatus(orderID int64) (*models.Order, error) {
+// GetOrderByID retrieves an order by ID
+func (s *OrderService) GetOrderByID(orderID int64) (*models.Order, error) {
 	return s.OrderRepo.GetOrderByID(orderID)
-}
-
-// UpdateOrderStatus updates the order status
-func (s *OrderService) UpdateOrderStatus(orderID int64, status string) error {
-	return s.OrderRepo.UpdateOrderStatus(orderID, status)
 }
 
 // GetAllOrders fetches all orders
@@ -34,7 +29,18 @@ func (s *OrderService) GetAllOrders() ([]models.Order, error) {
 	return s.OrderRepo.GetAllOrders()
 }
 
-// GetOrderStatusCount fetches the count of orders for each status
-func (s *OrderService) GetOrderStatusCount() (map[string]int64, error) {
-	return s.OrderRepo.GetOrderStatusCount()
+// GetOrderStatus fetches the status of an order
+func (s *OrderService) GetOrderStatus(orderID int64) (string, error) {
+	return s.OrderRepo.GetOrderStatus(orderID)
 }
+
+// UpdateOrderStatus updates an order's status
+func (s *OrderService) UpdateOrderStatus(orderID int64, status string) error {
+	return s.OrderRepo.UpdateOrderStatus(orderID, status)
+}
+
+// GetOrderStatusCount returns the count of orders with a specific status
+func (s *OrderService) GetOrderStatusCount(status string) (int64, error) {
+	return s.OrderRepo.GetOrderStatusCount(status)
+}
+
